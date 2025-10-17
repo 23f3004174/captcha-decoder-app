@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CAPTCHA OCR Decoder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #22c55e;
+      --accent-2: #60a5fa;
+      --danger: #ef4444;
+      --border: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; 
+      background: radial-gradient(1200px 500px at 80% -10%, rgba(96,165,250,0.16), transparent 60%),
+                  radial-gradient(1200px 500px at 20% -10%, rgba(34,197,94,0.16), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: start center;
+      padding: 32px 16px 80px;
+    }
+    .app {
+      width: 100%;
+      max-width: 880px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 12px 50px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+      backdrop-filter: blur(6px);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    header .logo {
+      width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
+      background: radial-gradient(60% 60% at 40% 30%, rgba(34,197,94,0.7), transparent 60%), 
+                  radial-gradient(60% 60% at 60% 70%, rgba(96,165,250,0.7), transparent 60%),
+                  #0b1220;
+      border: 1px solid var(--border);
+      box-shadow: inset 0 0 22px rgba(255,255,255,0.06);
+    }
+    h1 { font-size: 1.3rem; margin: 0; letter-spacing: 0.2px; }
+    p.sub { margin: 0; color: var(--muted); font-size: 0.95rem; }
+
+    .grid {
+      display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 16px;
+    }
+    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: rgba(17,24,39,0.66);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .field {
+      display: grid; gap: 8px; margin-bottom: 12px;
+    }
+    label { color: var(--muted); font-size: 0.95rem; }
+    input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px dashed #334155;
+      background: #0b1220;
+      color: var(--text);
+      border-radius: 8px;
+    }
+
+    .controls {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      margin: 8px 0 4px;
+    }
+    .checkbox {
+      display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.95rem;
+    }
+
+    button {
+      background: linear-gradient(180deg, #22c55e, #16a34a);
+      border: none;
+      color: #08110a;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(34,197,94,0.35);
+    }
+    button.secondary {
+      background: linear-gradient(180deg, #60a5fa, #3b82f6);
+      color: #061024;
+      box-shadow: 0 6px 18px rgba(59,130,246,0.35);
+    }
+    button:disabled {
+      opacity: 0.7; cursor: not-allowed; box-shadow: none;
+    }
+
+    .preview {
+      display: grid; gap: 10px;
+      grid-template-columns: 120px 1fr;
+      align-items: start;
+    }
+    .preview .thumb {
+      width: 120px; height: 80px; border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden; display: grid; place-items: center; background: #090f1a;
+    }
+    .thumb img { max-width: 100%; max-height: 100%; }
+
+    .status { font-size: 0.95rem; color: var(--muted); margin-top: 8px; min-height: 1.2em; }
+    .status.error { color: var(--danger); }
+    .status.success { color: var(--accent); }
+
+    .result {
+      font-family: ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      white-space: pre-wrap;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0b1220;
+      min-height: 52px;
+    }
+
+    details {
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    summary {
+      cursor: pointer; list-style: none;
+      padding: 10px 12px; background: #0b1220; color: var(--muted);
+    }
+    summary::-webkit-details-marker { display: none; }
+    .codewrap { max-height: 380px; overflow: auto; background: #050a13; border-top: 1px solid var(--border); }
+    pre {
+      margin: 0; padding: 16px; color: #d1d5db;
+      font-size: 13px; line-height: 1.5;
+    }
+
+    .spinner {
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: #60a5fa;
+      animation: spin 1s linear infinite;
+      display: inline-block; vertical-align: middle; margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .footer {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+    .hint { color: #93c5fd; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo" aria-hidden="true">🔎</div>
+      <div>
+        <h1>CAPTCHA OCR Decoder</h1>
+        <p class="sub">Upload a CAPTCHA image and extract its text using a Python OCR backend (pytesseract).</p>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="panel">
+        <form id="ocrForm">
+          <div class="field">
+            <label for="image">Choose CAPTCHA image</label>
+            <input id="image" type="file" name="image" accept="image/*" required />
+          </div>
+
+          <div class="controls">
+            <label class="checkbox">
+              <input type="checkbox" id="enhance" />
+              Enhance pre-processing (binarize)
+            </label>
+            <button id="submitBtn" type="submit">Decode CAPTCHA</button>
+            <button class="secondary" type="button" id="clearBtn">Clear</button>
+          </div>
+
+          <div class="preview">
+            <div class="thumb" id="thumb"><span style="color:#334155; font-size:12px;">No preview</span></div>
+            <div>
+              <div class="status" id="status"></div>
+              <div class="result" id="result" aria-live="polite"></div>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <aside class="panel">
+        <h3 style="margin: 0 0 10px;">How it works</h3>
+        <p style="margin-top:0; color: var(--muted);">
+          This page sends your uploaded image to a local Flask server that runs pytesseract (Tesseract OCR)
+          to decode the text. Use the “Enhance pre-processing” option to binarize the image, which can help on noisy CAPTCHAs.
+        </p>
+
+        <details>
+          <summary>Backend (Python Flask) — copy this into app.py</summary>
+          <div class="codewrap">
+            <pre><code># app.py
+# Simple Flask backend for CAPTCHA OCR using pytesseract
+# Requirements: pip install flask pillow pytesseract
+# Also install Tesseract OCR binary on your system.
+
+from flask import Flask, request, jsonify, send_from_directory
+from PIL import Image
+import pytesseract
+import os
+
+app = Flask(__name__)
+
+# Optional: set pytesseract binary path via env var TESSERACT_CMD, e.g.:
+# Windows example: set TESSERACT_CMD="C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
+# macOS/Linux example: export TESSERACT_CMD=/usr/local/bin/tesseract
+tess_cmd = os.environ.get("TESSERACT_CMD")
+if tess_cmd:
+    pytesseract.pytesseract.tesseract_cmd = tess_cmd
+
+@app.route("/")
+def index():
+    # Serve the front-end file from the same directory
+    return send_from_directory(".", "index.html")
+
+@app.route("/ocr", methods=["POST"])
+def ocr():
+    if "image" not in request.files:
+        return jsonify({"error": "No image file uploaded (field name should be 'image')."}), 400
+
+    file = request.files["image"]
+    if file.filename == "":
+        return jsonify({"error": "Empty filename."}), 400
+
+    try:
+        # Load image with PIL
+        img = Image.open(file.stream).convert("L")  # grayscale
+        # Optional pre-processing: simple binarization for noisy CAPTCHAs
+        enhance = request.form.get("enhance") in ("1", "true", "on", "yes")
+        if enhance:
+            # Threshold to produce a clean black/white image
+            img = img.point(lambda x: 0 if x < 140 else 255, "1")
+
+        # Use PSM 7 (treat image as a single text line) for CAPTCHA-like images
+        text = pytesseract.image_to_string(img, config="--psm 7")
+        text = text.strip()
+
+        return jsonify({"text": text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    # Note: in production, use a proper WSGI server and disable debug.
+    app.run(host="127.0.0.1", port=5000, debug=True)</code></pre>
+          </div>
+        </details>
+
+        <p class="footer">
+          Tip: Make sure Tesseract OCR is installed and accessible. See the <span class="hint">README</span> for setup.
+        </p>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('ocrForm');
+    const fileInput = document.getElementById('image');
+    const enhance = document.getElementById('enhance');
+    const statusEl = document.getElementById('status');
+    const resultEl = document.getElementById('result');
+    const thumb = document.getElementById('thumb');
+    const submitBtn = document.getElementById('submitBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    function setStatus(message, type = '') {
+      statusEl.textContent = message || '';
+      statusEl.className = 'status' + (type ? ' ' + type : '');
+    }
+
+    function setResult(text) {
+      resultEl.textContent = text || '';
+    }
+
+    function setLoading(isLoading) {
+      submitBtn.disabled = isLoading;
+      submitBtn.textContent = isLoading ? 'Decoding…' : 'Decode CAPTCHA';
+      if (isLoading) {
+        setStatus('');
+        statusEl.innerHTML = '<span class="spinner"></span>Processing image with OCR…';
+      }
+    }
+
+    function updatePreview(file) {
+      thumb.innerHTML = '<span style="color:#334155; font-size:12px;">No preview</span>';
+      if (!file) return;
+      const img = document.createElement('img');
+      img.alt = 'Selected preview';
+      img.src = URL.createObjectURL(file);
+      img.onload = () => URL.revokeObjectURL(img.src);
+      thumb.innerHTML = '';
+      thumb.appendChild(img);
+    }
+
+    fileInput.addEventListener('change', () => {
+      updatePreview(fileInput.files[0]);
+      setStatus('');
+      setResult('');
+    });
+
+    clearBtn.addEventListener('click', () => {
+      form.reset();
+      updatePreview(null);
+      setStatus('');
+      setResult('');
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const file = fileInput.files[0];
+      if (!file) {
+        setStatus('Please choose an image file.', 'error');
+        return;
+      }
+
+      const data = new FormData();
+      data.append('image', file);
+      if (enhance.checked) data.append('enhance', '1');
+
+      setLoading(true);
+      setResult('');
+
+      try {
+        const res = await fetch('/ocr', {
+          method: 'POST',
+          body: data
+        });
+
+        const isJson = res.headers.get('content-type')?.includes('application/json');
+        const payload = isJson ? await res.json() : { error: await res.text() };
+
+        if (!res.ok) {
+          throw new Error(payload?.error || ('HTTP ' + res.status));
+        }
+
+        const text = payload?.text ?? '';
+        setResult(text || '(No text detected)');
+        setStatus('OCR completed.', 'success');
+      } catch (err) {
+        setStatus('Error: ' + (err?.message || err), 'error');
+      } finally {
+        setLoading(false);
+      }
+    });
+  </script>
+</body>
+</html>

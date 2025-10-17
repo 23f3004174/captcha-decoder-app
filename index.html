@@ -1,371 +1,570 @@
-<!DOCTYPE html>
+index.html
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <title>CAPTCHA OCR Decoder</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
       --bg: #0f172a;
-      --panel: #111827;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
+      --fg: #e2e8f0;
+      --muted: #94a3b8;
       --accent: #22c55e;
-      --accent-2: #60a5fa;
+      --accent-2: #38bdf8;
       --danger: #ef4444;
+      --card: #111827;
+      --card-2: #0b1220;
       --border: #1f2937;
+      --input: #0b1220;
     }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; 
-      background: radial-gradient(1200px 500px at 80% -10%, rgba(96,165,250,0.16), transparent 60%),
-                  radial-gradient(1200px 500px at 20% -10%, rgba(34,197,94,0.16), transparent 60%),
-                  var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: grid;
-      place-items: start center;
-      padding: 32px 16px 80px;
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(1200px 600px at 10% -10%, #13223c 0%, #0b1220 40%, #080c16 100%), var(--bg);
+      color: var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial;
+      min-height: 100%;
     }
-    .app {
-      width: 100%;
-      max-width: 880px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    .container {
+      max-width: 960px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+    .title {
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      font-size: clamp(24px, 3vw, 36px);
+      margin: 0 0 8px 0;
+      background: linear-gradient(90deg, #fff, #a7f3d0);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .subtitle {
+      color: var(--muted);
+      margin: 0 0 24px 0;
+      font-size: 14px;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 22px;
-      box-shadow: 0 12px 50px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 15px 50px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
       backdrop-filter: blur(6px);
     }
-    header {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 18px;
-    }
-    header .logo {
-      width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
-      background: radial-gradient(60% 60% at 40% 30%, rgba(34,197,94,0.7), transparent 60%), 
-                  radial-gradient(60% 60% at 60% 70%, rgba(96,165,250,0.7), transparent 60%),
-                  #0b1220;
-      border: 1px solid var(--border);
-      box-shadow: inset 0 0 22px rgba(255,255,255,0.06);
-    }
-    h1 { font-size: 1.3rem; margin: 0; letter-spacing: 0.2px; }
-    p.sub { margin: 0; color: var(--muted); font-size: 0.95rem; }
-
     .grid {
-      display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 16px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
     }
-    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
-
-    .panel {
-      background: rgba(17,24,39,0.66);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
+    @media (min-width: 900px) {
+      .grid {
+        grid-template-columns: 1.05fr 1fr;
+        gap: 18px;
+      }
     }
-
-    .field {
-      display: grid; gap: 8px; margin-bottom: 12px;
-    }
-    label { color: var(--muted); font-size: 0.95rem; }
-    input[type="file"] {
-      width: 100%;
-      padding: 10px;
+    .dropzone {
       border: 1px dashed #334155;
-      background: #0b1220;
-      color: var(--text);
-      border-radius: 8px;
-    }
-
-    .controls {
-      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-      margin: 8px 0 4px;
-    }
-    .checkbox {
-      display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.95rem;
-    }
-
-    button {
-      background: linear-gradient(180deg, #22c55e, #16a34a);
-      border: none;
-      color: #08110a;
-      padding: 10px 16px;
-      border-radius: 10px;
-      font-weight: 700;
-      letter-spacing: 0.2px;
+      border-radius: 12px;
+      padding: 18px;
+      background: linear-gradient(180deg, rgba(56,189,248,0.06), rgba(34,197,94,0.04));
+      display: flex;
+      gap: 16px;
+      align-items: center;
       cursor: pointer;
-      box-shadow: 0 6px 18px rgba(34,197,94,0.35);
-    }
-    button.secondary {
-      background: linear-gradient(180deg, #60a5fa, #3b82f6);
-      color: #061024;
-      box-shadow: 0 6px 18px rgba(59,130,246,0.35);
-    }
-    button:disabled {
-      opacity: 0.7; cursor: not-allowed; box-shadow: none;
-    }
-
-    .preview {
-      display: grid; gap: 10px;
-      grid-template-columns: 120px 1fr;
-      align-items: start;
-    }
-    .preview .thumb {
-      width: 120px; height: 80px; border: 1px solid var(--border);
-      border-radius: 8px; overflow: hidden; display: grid; place-items: center; background: #090f1a;
-    }
-    .thumb img { max-width: 100%; max-height: 100%; }
-
-    .status { font-size: 0.95rem; color: var(--muted); margin-top: 8px; min-height: 1.2em; }
-    .status.error { color: var(--danger); }
-    .status.success { color: var(--accent); }
-
-    .result {
-      font-family: ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      white-space: pre-wrap;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: #0b1220;
-      min-height: 52px;
-    }
-
-    details {
-      margin-top: 14px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
+      position: relative;
+      transition: border-color 0.15s ease, transform 0.1s ease;
+      min-height: 130px;
       overflow: hidden;
     }
-    summary {
-      cursor: pointer; list-style: none;
-      padding: 10px 12px; background: #0b1220; color: var(--muted);
-    }
-    summary::-webkit-details-marker { display: none; }
-    .codewrap { max-height: 380px; overflow: auto; background: #050a13; border-top: 1px solid var(--border); }
-    pre {
-      margin: 0; padding: 16px; color: #d1d5db;
-      font-size: 13px; line-height: 1.5;
-    }
-
-    .spinner {
-      width: 16px; height: 16px; border-radius: 50%;
-      border: 2px solid rgba(255,255,255,0.2);
-      border-top-color: #60a5fa;
-      animation: spin 1s linear infinite;
-      display: inline-block; vertical-align: middle; margin-right: 8px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .footer {
-      margin-top: 14px;
+    .dropzone:hover { border-color: #60a5fa; transform: translateY(-1px); }
+    .dropzone.dragover { border-color: #22c55e; background: linear-gradient(180deg, rgba(34,197,94,0.12), rgba(34,197,94,0.06)); }
+    .dropzone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .preview {
+      width: 160px;
+      aspect-ratio: 4 / 3;
+      border-radius: 10px;
+      background: #0b1220;
+      border: 1px solid var(--border);
+      display: grid;
+      place-items: center;
       color: var(--muted);
-      font-size: 0.9rem;
-      text-align: center;
+      overflow: hidden;
     }
-    .hint { color: #93c5fd; }
+    .preview img { max-width: 100%; max-height: 100%; display: block; }
+    .dz-copy {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .control {
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .control label {
+      font-size: 12px;
+      color: var(--muted);
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .control input[type=checkbox] {
+      width: 16px; height: 16px;
+      accent-color: #22c55e;
+    }
+    .row {
+      display: grid; gap: 10px;
+      grid-template-columns: 1fr 1fr;
+      margin-top: 10px;
+    }
+    .field {
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .field label {
+      font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px;
+    }
+    .field input[type=text],
+    .field select {
+      width: 100%; font-size: 14px;
+      color: var(--fg); background: var(--input);
+      border: 1px solid #1f2a3d;
+      border-radius: 8px; padding: 8px 10px; outline: none;
+    }
+    .btns {
+      display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;
+    }
+    button {
+      appearance: none; border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(56,189,248,0.1), rgba(34,197,94,0.08));
+      color: var(--fg); padding: 10px 14px; border-radius: 10px;
+      cursor: pointer; font-weight: 600;
+      transition: transform 0.1s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    button:hover { transform: translateY(-1px); border-color: #38bdf8; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-secondary { background: transparent; }
+    .btn-danger { background: rgba(239,68,68,0.09); border-color: #7f1d1d; }
+    .result {
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      min-height: 120px;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 16px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .meta {
+      font-size: 12px; color: var(--muted); margin-top: 6px;
+    }
+    .status {
+      display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 999px; background: var(--muted); }
+    .dot.spin {
+      background: conic-gradient(from 0deg, #22c55e, #38bdf8, #22c55e);
+      -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 2px), #000 0);
+              mask: radial-gradient(farthest-side, #0000 calc(100% - 2px), #000 0);
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(1turn); } }
+    .error { color: #fecaca; }
+    .success { color: #a7f3d0; }
+    .footer {
+      margin-top: 18px; font-size: 12px; color: var(--muted);
+    }
+    .code-inline {
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      background: #0b1220; border: 1px solid var(--border); padding: 2px 6px; border-radius: 6px;
+      color: #e5e7eb;
+    }
   </style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <div class="logo" aria-hidden="true">🔎</div>
-      <div>
-        <h1>CAPTCHA OCR Decoder</h1>
-        <p class="sub">Upload a CAPTCHA image and extract its text using a Python OCR backend (pytesseract).</p>
-      </div>
-    </header>
+  <div class="container">
+    <h1 class="title">CAPTCHA OCR Decoder</h1>
+    <p class="subtitle">Upload a CAPTCHA image and instantly decode its text using Tesseract OCR. Drop an image or click to choose a file. The app preprocesses noisy images to improve recognition.</p>
 
     <div class="grid">
-      <section class="panel">
-        <form id="ocrForm">
+      <div class="card">
+        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload CAPTCHA image">
+          <div class="preview" id="preview"><span>Preview</span></div>
+          <div class="dz-copy">
+            <div style="font-weight:700; margin-bottom: 4px;">Choose or drop a CAPTCHA image</div>
+            <div>Supported: PNG, JPG, GIF, BMP, WEBP (max 5 MB)</div>
+            <div style="margin-top:8px; font-size:12px; color:#a3e635;">Tip: Decoding runs automatically after you select an image.</div>
+          </div>
+          <input id="file" type="file" accept="image/*" />
+        </div>
+
+        <div class="controls">
+          <div class="control">
+            <label><input id="binarize" type="checkbox" checked /> Enhance pre-processing (binarize + denoise)</label>
+          </div>
+          <div class="control">
+            <label><input id="autodecode" type="checkbox" checked /> Auto-decode on file select</label>
+          </div>
+        </div>
+
+        <div class="row">
           <div class="field">
-            <label for="image">Choose CAPTCHA image</label>
-            <input id="image" type="file" name="image" accept="image/*" required />
+            <label for="psm">Page Segmentation Mode (PSM)</label>
+            <select id="psm">
+              <option value="7" selected>7 — Treat image as a single line of text</option>
+              <option value="8">8 — Treat image as a single word</option>
+              <option value="6">6 — Assume a single uniform block of text</option>
+              <option value="13">13 — Raw line (sparse text, no layout)</option>
+            </select>
           </div>
-
-          <div class="controls">
-            <label class="checkbox">
-              <input type="checkbox" id="enhance" />
-              Enhance pre-processing (binarize)
-            </label>
-            <button id="submitBtn" type="submit">Decode CAPTCHA</button>
-            <button class="secondary" type="button" id="clearBtn">Clear</button>
+          <div class="field">
+            <label for="whitelist">Allowed characters (whitelist)</label>
+            <input id="whitelist" type="text" placeholder="e.g. ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" />
           </div>
+        </div>
 
-          <div class="preview">
-            <div class="thumb" id="thumb"><span style="color:#334155; font-size:12px;">No preview</span></div>
-            <div>
-              <div class="status" id="status"></div>
-              <div class="result" id="result" aria-live="polite"></div>
-            </div>
+        <div class="btns">
+          <button id="decodeBtn">Decode CAPTCHA</button>
+          <button id="clearBtn" class="btn-secondary">Clear</button>
+        </div>
+
+        <div class="meta" id="status"><span class="status"><span class="dot"></span><span>Idle</span></span></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="font-weight:700;">Detected text</div>
+          <div>
+            <button id="copyBtn" class="btn-secondary" title="Copy result to clipboard">Copy</button>
           </div>
-        </form>
-      </section>
+        </div>
+        <div id="result" class="result" aria-live="polite"></div>
+        <div id="meta" class="meta"></div>
+      </div>
+    </div>
 
-      <aside class="panel">
-        <h3 style="margin: 0 0 10px;">How it works</h3>
-        <p style="margin-top:0; color: var(--muted);">
-          This page sends your uploaded image to a local Flask server that runs pytesseract (Tesseract OCR)
-          to decode the text. Use the “Enhance pre-processing” option to binarize the image, which can help on noisy CAPTCHAs.
-        </p>
-
-        <details>
-          <summary>Backend (Python Flask) — copy this into app.py</summary>
-          <div class="codewrap">
-            <pre><code># app.py
-# Simple Flask backend for CAPTCHA OCR using pytesseract
-# Requirements: pip install flask pillow pytesseract
-# Also install Tesseract OCR binary on your system.
-
-from flask import Flask, request, jsonify, send_from_directory
-from PIL import Image
-import pytesseract
-import os
-
-app = Flask(__name__)
-
-# Optional: set pytesseract binary path via env var TESSERACT_CMD, e.g.:
-# Windows example: set TESSERACT_CMD="C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
-# macOS/Linux example: export TESSERACT_CMD=/usr/local/bin/tesseract
-tess_cmd = os.environ.get("TESSERACT_CMD")
-if tess_cmd:
-    pytesseract.pytesseract.tesseract_cmd = tess_cmd
-
-@app.route("/")
-def index():
-    # Serve the front-end file from the same directory
-    return send_from_directory(".", "index.html")
-
-@app.route("/ocr", methods=["POST"])
-def ocr():
-    if "image" not in request.files:
-        return jsonify({"error": "No image file uploaded (field name should be 'image')."}), 400
-
-    file = request.files["image"]
-    if file.filename == "":
-        return jsonify({"error": "Empty filename."}), 400
-
-    try:
-        # Load image with PIL
-        img = Image.open(file.stream).convert("L")  # grayscale
-        # Optional pre-processing: simple binarization for noisy CAPTCHAs
-        enhance = request.form.get("enhance") in ("1", "true", "on", "yes")
-        if enhance:
-            # Threshold to produce a clean black/white image
-            img = img.point(lambda x: 0 if x < 140 else 255, "1")
-
-        # Use PSM 7 (treat image as a single text line) for CAPTCHA-like images
-        text = pytesseract.image_to_string(img, config="--psm 7")
-        text = text.strip()
-
-        return jsonify({"text": text})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-if __name__ == "__main__":
-    # Note: in production, use a proper WSGI server and disable debug.
-    app.run(host="127.0.0.1", port=5000, debug=True)</code></pre>
-          </div>
-        </details>
-
-        <p class="footer">
-          Tip: Make sure Tesseract OCR is installed and accessible. See the <span class="hint">README</span> for setup.
-        </p>
-      </aside>
+    <div class="footer">
+      Backend: Python Flask + pytesseract (Tesseract OCR). Ensure Tesseract is installed and available on PATH or set <span class="code-inline">TESSERACT_CMD</span>. See README for setup instructions.
     </div>
   </div>
 
   <script>
-    const form = document.getElementById('ocrForm');
-    const fileInput = document.getElementById('image');
-    const enhance = document.getElementById('enhance');
-    const statusEl = document.getElementById('status');
-    const resultEl = document.getElementById('result');
-    const thumb = document.getElementById('thumb');
-    const submitBtn = document.getElementById('submitBtn');
-    const clearBtn = document.getElementById('clearBtn');
+    const el = (id) => document.getElementById(id);
 
-    function setStatus(message, type = '') {
-      statusEl.textContent = message || '';
-      statusEl.className = 'status' + (type ? ' ' + type : '');
+    const fileInput = el('file');
+    const preview = el('preview');
+    const dropzone = el('dropzone');
+    const decodeBtn = el('decodeBtn');
+    const clearBtn = el('clearBtn');
+    const copyBtn = el('copyBtn');
+    const statusEl = el('status');
+    const resultEl = el('result');
+    const metaEl = el('meta');
+    const binarizeEl = el('binarize');
+    const autodecodeEl = el('autodecode');
+    const psmEl = el('psm');
+    const whitelistEl = el('whitelist');
+
+    let currentFile = null;
+
+    function setStatus(text, mode = 'idle') {
+      const dot = mode === 'busy' ? 'dot spin' : (mode === 'ok' ? 'dot' : (mode === 'err' ? 'dot' : 'dot'));
+      const cls = mode === 'ok' ? 'success' : (mode === 'err' ? 'error' : '');
+      statusEl.innerHTML = `<span class="status ${cls}"><span class="${dot}"></span><span>${text}</span></span>`;
     }
 
-    function setResult(text) {
-      resultEl.textContent = text || '';
+    function resetUI() {
+      preview.innerHTML = '<span>Preview</span>';
+      resultEl.textContent = '';
+      metaEl.textContent = '';
+      currentFile = null;
+      fileInput.value = '';
+      setStatus('Idle', 'idle');
     }
 
-    function setLoading(isLoading) {
-      submitBtn.disabled = isLoading;
-      submitBtn.textContent = isLoading ? 'Decoding…' : 'Decode CAPTCHA';
-      if (isLoading) {
-        setStatus('');
-        statusEl.innerHTML = '<span class="spinner"></span>Processing image with OCR…';
+    function showPreview(file) {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => URL.revokeObjectURL(url);
+      img.src = url;
+      preview.innerHTML = '';
+      preview.appendChild(img);
+    }
+
+    function fileTooLarge(file) {
+      const maxBytes = 5 * 1024 * 1024;
+      return file.size > maxBytes;
+    }
+
+    async function decode() {
+      if (!currentFile) {
+        setStatus('Please choose an image file first.', 'err');
+        return;
       }
-    }
-
-    function updatePreview(file) {
-      thumb.innerHTML = '<span style="color:#334155; font-size:12px;">No preview</span>';
-      if (!file) return;
-      const img = document.createElement('img');
-      img.alt = 'Selected preview';
-      img.src = URL.createObjectURL(file);
-      img.onload = () => URL.revokeObjectURL(img.src);
-      thumb.innerHTML = '';
-      thumb.appendChild(img);
-    }
-
-    fileInput.addEventListener('change', () => {
-      updatePreview(fileInput.files[0]);
-      setStatus('');
-      setResult('');
-    });
-
-    clearBtn.addEventListener('click', () => {
-      form.reset();
-      updatePreview(null);
-      setStatus('');
-      setResult('');
-    });
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const file = fileInput.files[0];
-      if (!file) {
-        setStatus('Please choose an image file.', 'error');
+      if (fileTooLarge(currentFile)) {
+        setStatus('File too large (max 5 MB).', 'err');
         return;
       }
 
-      const data = new FormData();
-      data.append('image', file);
-      if (enhance.checked) data.append('enhance', '1');
+      setStatus('Processing OCR…', 'busy');
+      decodeBtn.disabled = true;
 
-      setLoading(true);
-      setResult('');
+      const form = new FormData();
+      form.append('image', currentFile);
+      form.append('binarize', binarizeEl.checked ? '1' : '0');
+      form.append('psm', psmEl.value);
+      form.append('whitelist', (whitelistEl.value || '').trim());
 
+      const t0 = performance.now();
       try {
-        const res = await fetch('/ocr', {
-          method: 'POST',
-          body: data
-        });
-
-        const isJson = res.headers.get('content-type')?.includes('application/json');
-        const payload = isJson ? await res.json() : { error: await res.text() };
-
-        if (!res.ok) {
-          throw new Error(payload?.error || ('HTTP ' + res.status));
+        const res = await fetch('/api/ocr', { method: 'POST', body: form });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data || data.ok === false) {
+          const msg = (data && data.error) ? data.error : `HTTP ${res.status}`;
+          setStatus(`Error: ${msg}`, 'err');
+          resultEl.textContent = '';
+          metaEl.textContent = '';
+        } else {
+          const t1 = performance.now();
+          const ms = Math.round(t1 - t0);
+          resultEl.textContent = data.text || '';
+          metaEl.textContent = `Time: ${data.time_ms ?? ms} ms • PSM: ${psmEl.value}${binarizeEl.checked ? ' • Preprocessed' : ''}${data.used_whitelist ? ' • Whitelist applied' : ''}`;
+          setStatus('OCR completed.', 'ok');
         }
-
-        const text = payload?.text ?? '';
-        setResult(text || '(No text detected)');
-        setStatus('OCR completed.', 'success');
-      } catch (err) {
-        setStatus('Error: ' + (err?.message || err), 'error');
+      } catch (e) {
+        setStatus('Network or server error. Check console and backend.', 'err');
+        console.error(e);
       } finally {
-        setLoading(false);
+        decodeBtn.disabled = false;
+      }
+    }
+
+    // Drag-and-drop handlers
+    ;['dragenter','dragover'].forEach(ev => {
+      dropzone.addEventListener(ev, (e) => {
+        e.preventDefault(); e.stopPropagation();
+        dropzone.classList.add('dragover');
+      });
+    });
+    ;['dragleave','drop'].forEach(ev => {
+      dropzone.addEventListener(ev, (e) => {
+        e.preventDefault(); e.stopPropagation();
+        dropzone.classList.remove('dragover');
+      });
+    });
+    dropzone.addEventListener('drop', (e) => {
+      const f = e.dataTransfer.files?.[0];
+      if (!f) return;
+      if (!f.type.startsWith('image/')) {
+        setStatus('Please drop an image file.', 'err'); return;
+      }
+      currentFile = f;
+      showPreview(f);
+      setStatus('Image ready.' + (autodecodeEl.checked ? ' Decoding…' : ''), 'ok');
+      if (autodecodeEl.checked) decode();
+    });
+
+    // File input select
+    fileInput.addEventListener('change', () => {
+      const f = fileInput.files?.[0];
+      if (!f) return;
+      if (!f.type.startsWith('image/')) {
+        setStatus('Please choose an image file.', 'err'); return;
+      }
+      if (fileTooLarge(f)) {
+        setStatus('File too large (max 5 MB).', 'err'); return;
+      }
+      currentFile = f;
+      showPreview(f);
+      setStatus('Image ready.' + (autodecodeEl.checked ? ' Decoding…' : ''), 'ok');
+      if (autodecodeEl.checked) decode();
+    });
+
+    decodeBtn.addEventListener('click', (e) => { e.preventDefault(); decode(); });
+    clearBtn.addEventListener('click', (e) => { e.preventDefault(); resetUI(); });
+    copyBtn.addEventListener('click', async () => {
+      const txt = resultEl.textContent || '';
+      if (!txt) return;
+      try {
+        await navigator.clipboard.writeText(txt);
+        setStatus('Copied result to clipboard.', 'ok');
+        setTimeout(() => setStatus('Idle', 'idle'), 1200);
+      } catch {
+        setStatus('Copy failed. Select and copy manually.', 'err');
       }
     });
+
+    // Persist UI preferences
+    function savePrefs() {
+      const prefs = {
+        binarize: binarizeEl.checked,
+        autodecode: autodecodeEl.checked,
+        psm: psmEl.value,
+      };
+      localStorage.setItem('captcha_ocr_prefs', JSON.stringify(prefs));
+    }
+    function loadPrefs() {
+      try {
+        const raw = localStorage.getItem('captcha_ocr_prefs');
+        if (!raw) return;
+        const p = JSON.parse(raw);
+        if (typeof p.binarize === 'boolean') binarizeEl.checked = p.binarize;
+        if (typeof p.autodecode === 'boolean') autodecodeEl.checked = p.autodecode;
+        if (p.psm) psmEl.value = p.psm;
+      } catch {}
+    }
+    [binarizeEl, autodecodeEl, psmEl].forEach(elm => {
+      elm.addEventListener('change', savePrefs);
+    });
+    loadPrefs();
   </script>
+
+  <!--
+    Backend (Python Flask) — copy this into app.py
+    =================================================
+
+    from flask import Flask, request, jsonify, send_from_directory
+    from PIL import Image, ImageFilter, ImageOps
+    import pytesseract, os, io, time
+
+    # Optional: pick up custom Tesseract binary path from env
+    TESS = os.environ.get("TESSERACT_CMD")
+    if TESS:
+      pytesseract.pytesseract.tesseract_cmd = TESS
+
+    ALLOWED = {"png","jpg","jpeg","gif","bmp","webp"}
+    MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5 MB
+
+    app = Flask(__name__, static_folder='.', static_url_path='')
+    app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
+
+    def allowed_file(filename: str) -> bool:
+      return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED
+
+    def expand_whitelist(expr: str) -> str:
+      """
+      Expand simple ranges like A-Z, a-z, 0-9 into full character lists.
+      Any other characters are included verbatim.
+      Examples:
+        'A-Z0-9' -> 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        'ABCD123' -> 'ABCD123'
+      """
+      if not expr:
+        return ""
+      out = []
+      i = 0
+      while i < len(expr):
+        c = expr[i]
+        if i+2 < len(expr) and expr[i+1] == '-':
+          start, end = ord(c), ord(expr[i+2])
+          if start <= end and (c.isalnum() and expr[i+2].isalnum()):
+            for code in range(start, end+1):
+              out.append(chr(code))
+            i += 3
+            continue
+        out.append(c)
+        i += 1
+      # Remove spaces to be safe
+      return "".join(ch for ch in out if ch != ' ')
+
+    def preprocess(img: Image.Image, do_binarize: bool) -> Image.Image:
+      """
+      Basic preprocessing for CAPTCHA-like images:
+      - Convert to grayscale and auto-orient (EXIF)
+      - Autocontrast to stretch intensity
+      - Light median filter to reduce speckle
+      - Optional binarization using a fixed threshold tuned for CAPTCHAs
+      """
+      # Ensure we work on a copy
+      img = ImageOps.exif_transpose(img)
+      # Convert paletted/animated first frame to RGB then to L
+      if img.mode in ("P", "RGBA"):
+        img = img.convert("RGB")
+      gray = img.convert("L")
+      gray = ImageOps.autocontrast(gray, cutoff=2)
+      gray = gray.filter(ImageFilter.MedianFilter(size=3))
+      if do_binarize:
+        # Threshold value works decently for many CAPTCHAs; adjust if needed
+        threshold = 160
+        bw = gray.point(lambda p: 255 if p > threshold else 0, mode='1')
+        # Thicken strokes slightly to bridge gaps
+        bw = bw.convert("L").filter(ImageFilter.MinFilter(3))
+        return bw
+      return gray
+
+    @app.route("/")
+    def index():
+      # Serve the front-end
+      return send_from_directory(".", "index.html")
+
+    @app.route("/api/ocr", methods=["POST"])
+    def api_ocr():
+      t_start = time.time()
+      if "image" not in request.files:
+        return jsonify(ok=False, error="No file provided."), 400
+
+      f = request.files["image"]
+      if f.filename == "":
+        return jsonify(ok=False, error="Empty filename."), 400
+      if not allowed_file(f.filename):
+        return jsonify(ok=False, error="Unsupported file type."), 400
+
+      try:
+        # Load image into PIL
+        img_bytes = f.read()
+        stream = io.BytesIO(img_bytes)
+        img = Image.open(stream)
+      except Exception as e:
+        return jsonify(ok=False, error=f"Could not read image: {e}"), 400
+
+      # Options
+      do_binarize = request.form.get("binarize", "0") == "1"
+      psm = request.form.get("psm", "7")
+      whitelist_expr = (request.form.get("whitelist") or "").strip()
+      whitelist = expand_whitelist(whitelist_expr)
+
+      try:
+        proc = preprocess(img, do_binarize)
+        config = f"--psm {psm} --oem 3"
+        if whitelist:
+          # Apply whitelist to bias Tesseract
+          config += f" -c tessedit_char_whitelist={whitelist}"
+
+        text = pytesseract.image_to_string(proc, config=config)
+        # Normalize: keep first line or trimmed text
+        cleaned = " ".join([line.strip() for line in text.splitlines() if line.strip()])
+        elapsed_ms = int((time.time() - t_start) * 1000)
+        return jsonify(
+          ok=True,
+          text=cleaned,
+          time_ms=elapsed_ms,
+          used_whitelist=bool(whitelist)
+        )
+      except pytesseract.TesseractError as te:
+        return jsonify(ok=False, error=f"Tesseract error: {te}"), 500
+      except Exception as e:
+        return jsonify(ok=False, error=f"Server error: {e}"), 500
+
+    @app.route("/healthz")
+    def health():
+      return jsonify(status="ok")
+
+    if __name__ == "__main__":
+      port = int(os.environ.get("PORT", "5000"))
+      app.run(host="127.0.0.1", port=port, debug=True)
+  -->
 </body>
 </html>
